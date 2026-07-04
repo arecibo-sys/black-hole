@@ -54,10 +54,27 @@ export function createAmbientAudio() {
   }
 
   function start() {
-    if (started) return;
+    // iOS Safari suspends the context aggressively; every gesture retries.
+    if (started) {
+      if (ctx && ctx.state === 'suspended') ctx.resume();
+      return;
+    }
     started = true;
 
+    // iOS 16.4+: declare a playback session so Web Audio plays even with
+    // the ring/silent switch on silent.
+    try {
+      if (navigator.audioSession) navigator.audioSession.type = 'playback';
+    } catch (_) { /* older browsers */ }
+
     ctx = new (window.AudioContext || window.webkitAudioContext)();
+    ctx.resume(); // must happen inside the user gesture on iOS
+
+    // classic iOS unlock: play one silent sample inside the gesture
+    const unlock = ctx.createBufferSource();
+    unlock.buffer = ctx.createBuffer(1, 1, 22050);
+    unlock.connect(ctx.destination);
+    unlock.start(0);
     master = ctx.createGain();
     master.gain.value = 0;
     master.connect(ctx.destination);
@@ -77,8 +94,14 @@ export function createAmbientAudio() {
     rumbleSrc.connect(rumbleLp).connect(rumbleGain).connect(master);
     rumbleSrc.start();
 
-    // ── beating sub drone ──────────────────────────────────────────
-    for (const [freq, level, rate] of [[41.2, 0.16, 0.011], [41.8, 0.14, 0.019]]) {
+    // ── beating sub drone + quiet mid harmonics ────────────────────
+    // The 41 Hz pair is felt on good speakers/headphones; the 110/165 Hz
+    // layers exist so small phone speakers (which can't reproduce sub
+    // bass at all) still hear a faint drone.
+    for (const [freq, level, rate] of [
+      [41.2, 0.16, 0.011], [41.8, 0.14, 0.019],
+      [110.0, 0.055, 0.013], [164.8, 0.03, 0.024],
+    ]) {
       const osc = ctx.createOscillator();
       osc.type = 'sine';
       osc.frequency.value = freq;
@@ -98,7 +121,7 @@ export function createAmbientAudio() {
     shimmerBp.Q.value = 0.8;
     lfo(ctx, shimmerBp.frequency, 1600, 500, 0.023);
     const shimmerGain = ctx.createGain();
-    lfo(ctx, shimmerGain.gain, 0.028, 0.018, 0.041);
+    lfo(ctx, shimmerGain.gain, 0.05, 0.025, 0.041);
     shimmerSrc.connect(shimmerBp).connect(shimmerGain).connect(master);
     shimmerSrc.start();
 

@@ -41,8 +41,13 @@ const post = createComposer(renderer, scene, camera);
 
 // ── ambient audio: starts on first gesture, speaker button toggles ──────
 const audio = createAmbientAudio();
-window.addEventListener('pointerdown', () => audio.start(), { once: true });
-window.addEventListener('keydown', () => audio.start(), { once: true });
+// not {once}: iOS re-suspends the context (tab switch, lock screen),
+// and start() doubles as a resume on every gesture
+window.addEventListener('pointerdown', () => audio.start());
+window.addEventListener('keydown', () => audio.start());
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) audio.start();
+});
 
 const soundBtn = document.getElementById('sound');
 soundBtn.addEventListener('click', (e) => {
