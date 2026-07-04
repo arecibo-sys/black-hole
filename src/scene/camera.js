@@ -25,39 +25,70 @@ export function createCinematicCamera(aspect, domElement) {
   // current (smoothed) values
   let yaw = tYaw, pitch = tPitch, radius = tRadius;
 
-  // ── pointer input ─────────────────────────────────────────────────────
-  let dragging = false;
-  let lastX = 0, lastY = 0;
+  // ── pointer input (mouse + touch, via pointer events) ────────────────
+  // One pointer  → orbit.  Two pointers → pinch zoom.
+  // touch-action: none stops the browser from hijacking the gestures
+  // for page scroll / pinch-page-zoom on mobile.
+  const pointers = new Map(); // pointerId → {x, y}
+  let pinchDist = 0;
+
+  const zoomBy = (factor) => {
+    tRadius = THREE.MathUtils.clamp(tRadius * factor, 3.2, 40);
+  };
 
   domElement.style.cursor = 'grab';
+  domElement.style.touchAction = 'none';
+
   domElement.addEventListener('pointerdown', (e) => {
-    dragging = true;
-    lastX = e.clientX; lastY = e.clientY;
-    domElement.style.cursor = 'grabbing';
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     domElement.setPointerCapture(e.pointerId);
+    domElement.style.cursor = 'grabbing';
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      pinchDist = Math.hypot(a.x - b.x, a.y - b.y);
+    }
   });
+
   domElement.addEventListener('pointermove', (e) => {
-    if (!dragging) return;
-    tYaw -= (e.clientX - lastX) * 0.004;
-    tPitch += (e.clientY - lastY) * 0.003;
-    // don't let the view flip over the poles; keep the disk in frame
-    tPitch = THREE.MathUtils.clamp(tPitch, -1.25, 1.25);
-    lastX = e.clientX; lastY = e.clientY;
+    const p = pointers.get(e.pointerId);
+    if (!p) return;
+
+    if (pointers.size === 1) {
+      // orbit
+      tYaw -= (e.clientX - p.x) * 0.004;
+      tPitch += (e.clientY - p.y) * 0.003;
+      // don't let the view flip over the poles; keep the disk in frame
+      tPitch = THREE.MathUtils.clamp(tPitch, -1.25, 1.25);
+    }
+
+    p.x = e.clientX; p.y = e.clientY;
+
+    if (pointers.size === 2) {
+      // pinch: spreading fingers → dolly in, pinching → dolly out
+      const [a, b] = [...pointers.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (pinchDist > 0 && d > 0) zoomBy(pinchDist / d);
+      pinchDist = d;
+    }
   });
-  const endDrag = () => { dragging = false; domElement.style.cursor = 'grab'; };
-  domElement.addEventListener('pointerup', endDrag);
-  domElement.addEventListener('pointercancel', endDrag);
+
+  const endPointer = (e) => {
+    pointers.delete(e.pointerId);
+    pinchDist = 0;
+    if (pointers.size === 0) domElement.style.cursor = 'grab';
+  };
+  domElement.addEventListener('pointerup', endPointer);
+  domElement.addEventListener('pointercancel', endPointer);
 
   domElement.addEventListener('wheel', (e) => {
     e.preventDefault();
     // exponential dolly feels uniform at every distance
-    tRadius *= Math.exp(e.deltaY * 0.0012);
-    tRadius = THREE.MathUtils.clamp(tRadius, 3.2, 40);
+    zoomBy(Math.exp(e.deltaY * 0.0012));
   }, { passive: false });
 
   function update(time, dt) {
-    // auto-orbit keeps drifting; pauses while the user is dragging
-    if (!dragging) tYaw += C.speed * dt;
+    // auto-orbit keeps drifting; pauses while the user is interacting
+    if (pointers.size === 0) tYaw += C.speed * dt;
 
     // cinematic breathing layered on top of the user's framing
     const breatheR = Math.sin(time * 0.021) * C.radiusDrift;

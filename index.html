@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Black Hole — Gravitational Lensing Simulation</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; overscroll-behavior: none; }
     canvas { display: block; }
     #title {
       position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
@@ -20,7 +20,7 @@
   </style>
 </head>
 <body>
-  <div id="title">Gargantua<br /><span style="font-size:10px; letter-spacing:0.3em; opacity:0.7;">drag to orbit &nbsp;·&nbsp; scroll to zoom</span></div>
+  <div id="title">Gargantua<br /><span style="font-size:10px; letter-spacing:0.3em; opacity:0.7;">drag to orbit &nbsp;·&nbsp; pinch or scroll to zoom</span></div>
   <script type="importmap">
     {
       "imports": {
