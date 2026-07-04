@@ -14,6 +14,7 @@ import { createBlackHole } from './scene/blackhole.js';
 import { createParticles } from './scene/particles.js';
 import { createCinematicCamera } from './scene/camera.js';
 import { createComposer } from './post/composer.js';
+import { createAmbientAudio } from './audio.js';
 
 const renderer = new THREE.WebGLRenderer({
   antialias: false, // the geodesic shader supersamples poorly; bloom + dither hide aliasing
@@ -37,6 +38,20 @@ const particles = createParticles();
 scene.add(particles.points);
 
 const post = createComposer(renderer, scene, camera);
+
+// ── ambient audio: starts on first gesture, speaker button toggles ──────
+const audio = createAmbientAudio();
+window.addEventListener('pointerdown', () => audio.start(), { once: true });
+window.addEventListener('keydown', () => audio.start(), { once: true });
+
+const soundBtn = document.getElementById('sound');
+soundBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  audio.start();
+  const nowMuted = audio.toggle();
+  soundBtn.textContent = nowMuted ? '🔇' : '🔊';
+  soundBtn.title = nowMuted ? 'unmute' : 'mute';
+});
 
 window.addEventListener('resize', () => {
   const w = window.innerWidth, h = window.innerHeight;
