@@ -27,8 +27,8 @@ document.body.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 
-const { camera, update: updateCamera } =
-  createCinematicCamera(window.innerWidth / window.innerHeight);
+const { camera, update: updateCamera } = createCinematicCamera(
+  window.innerWidth / window.innerHeight, renderer.domElement);
 
 const blackHole = createBlackHole();
 scene.add(blackHole.mesh);

@@ -44,7 +44,7 @@ export const CONFIG = {
 
   // ── Cinematic camera ───────────────────────────────────────────────────
   camera: {
-    speed: 0.032,       // orbital angular velocity (rad/s)
+    speed: 0.055,       // orbital angular velocity (rad/s)
     radius: 13.5,       // mean orbit distance (rs units)
     radiusDrift: 1.6,   // slow breathing in/out
     elevation: 0.30,    // mean height above disk plane (radians of tilt)
