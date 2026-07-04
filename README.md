@@ -2,6 +2,8 @@
 
 A cinematic, physically inspired black hole simulation in Three.js — runs entirely in the browser.
 
+**▶ Live demo: [arecibo-sys.github.io/black-hole](https://arecibo-sys.github.io/black-hole/)** — drag to orbit, pinch or scroll to zoom, tap for ambient sound.
+
 ![](https://img.shields.io/badge/three.js-r160-black) ![](https://img.shields.io/badge/WebGL2-GPU%20shaders-orange)
 
 ## What you're looking at
